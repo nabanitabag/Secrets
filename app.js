@@ -2,7 +2,8 @@
 const express = require("express"),
       bodyparser = require("body-parser"),
       ejs = require("ejs"),
-      mongoose = require("mongoose");
+      mongoose = require("mongoose"),
+      encrypt = require("mongoose-encryption");
 
 const app = express();
 
@@ -14,10 +15,13 @@ app.use(bodyparser.urlencoded({
 
 mongoose.connect("mongodb://localhost:27017/userDB", {useNewUrlParser: true});
 
-const userSchema = {
+const userSchema = new mongoose.Schema({
   email: String,
   password: String
-};
+});
+
+const secret = "Thisisourlittlesecret";
+userSchema.plugin(encrypt, {secret: secret, encryptedFields:["password"]});
 
 const User = new mongoose.model("User", userSchema);
 
@@ -54,18 +58,16 @@ password = req.body.username;
 User.findOne({email: username}, function (err, founduser) {
   if(err)
   console.log(err);
-
   else{
-    if(founduser)
-    {
-      if(founduser.password === password)
-      {
+    if(founduser){
+      //decryption
+      if(founduser.password === password){
         res.render("secrets");
       }
     }
   }
+});
 
-})
 });
 
 app.listen(3000, function () {
